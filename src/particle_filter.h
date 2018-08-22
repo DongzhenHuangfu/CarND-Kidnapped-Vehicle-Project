@@ -10,6 +10,7 @@
 #define PARTICLE_FILTER_H_
 
 #include "helper_functions.h"
+#include "map.h"
 
 struct Particle {
 

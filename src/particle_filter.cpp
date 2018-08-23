@@ -115,30 +115,26 @@ void ParticleFilter::updateWeights(double sensor_range, double std_landmark[],
 	//   and the following is a good resource for the actual equation to implement (look at equation 
 	//   3.33
 	//   http://planning.cs.uiuc.edu/node99.html
-	vector<LandmarkObs> predictions;
-
-	for(int i = 0; i < num_particles; i++){
-
-		for(unsigned j = 0; j < map_landmarks.landmark_list.size(); j++){
-
-			if((abs(map_landmarks.landmark_list[j].x_f - particles[i].x) < sensor_range) && 
-			   (abs(map_landmarks.landmark_list[j].y_f - particles[i].y) < sensor_range)){
-
-				LandmarkObs tempt;
-				tempt.x = map_landmarks.landmark_list[j].x_f;
-				tempt.y = map_landmarks.landmark_list[j].y_f;
-				tempt.id = map_landmarks.landmark_list[j].id_i;
-				predictions.push_back(tempt);
-
-			}
-		}
-	}
 
 	for(int j = 0; j < num_particles; j++){
 
-		vector<LandmarkObs> trans_observations;
+		vector<LandmarkObs> trans_observations, predictions;
+
+		for(unsigned i = 0; i < map_landmarks.landmark_list.size(); i++){
+
+			if((abs(map_landmarks.landmark_list[i].x_f - particles[j].x) < sensor_range) && 
+			   (abs(map_landmarks.landmark_list[i].y_f - particles[j].y) < sensor_range)){
+
+				LandmarkObs tempt;
+				tempt.x = map_landmarks.landmark_list[i].x_f;
+				tempt.y = map_landmarks.landmark_list[i].y_f;
+				tempt.id = map_landmarks.landmark_list[i].id_i;
+				predictions.push_back(tempt);
+				}
+			}
 		
 		for(unsigned int i = 0; i < observations.size(); i++){
+
 			LandmarkObs tempt;
 			tempt.x = particles[j].x + observations[i].x * cos(particles[j].theta) - observations[i].y * sin(particles[j].theta);
 			tempt.y = particles[j].y + observations[i].x * sin(particles[j].theta) + observations[i].y * cos(particles[j].theta);
@@ -195,16 +191,19 @@ void ParticleFilter::resample() {
 	vector<Particle> tempt;
 
 	double belta = 0.0;
-	int index = (int)(rand() % num_particles);
+	discrete_distribution<> d(weights.begin(), weights.end());
+	//cout<<d(gen)<<endl;
+	/*int index = (int)(rand() % num_particles);
 	vector<double>::iterator p = max_element(weights.begin(), weights.end());
-
 	discrete_distribution<int> wei(0,1000);
+	uniform_real_distribution<double> add_belta(0.0, 2 * (*p));*/
 
-	uniform_real_distribution<double> add_belta(0.0, 2 * (*p));
+	int index = d(gen);
 
 	for(int i = 0; i < num_particles; i++){
 
-		belta += add_belta(gen);
+		//belta += add_belta(gen);
+		belta += weights[d(gen)] * 2;
 
 		while(weights[index] < belta){
 
@@ -213,6 +212,7 @@ void ParticleFilter::resample() {
 		}
 		tempt.push_back(particles[index]);
 	}
+
 	particles = tempt;
 }
 
